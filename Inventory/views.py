@@ -1,4 +1,4 @@
 from django.shortcuts import render
-from Ingredients.models import Ingredients
+from Inventory.models import Inventory
 
 # Create your views here.

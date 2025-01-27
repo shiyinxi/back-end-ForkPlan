@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'Recipes.apps.RecipesConfig',
-    'Ingredients.apps.IngredientsConfig',
+    'Inventory.apps.InventoryConfig',
+    'ShoppingList.apps.ShoppinglistConfig',
+
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -83,6 +85,7 @@ WSGI_APPLICATION = 'ForkPlan.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
+        'ENFORCE_SCHEMA': False,
         'CLIENT': {
             "host":"mongodb+srv://shiyinxi:z5uGfxFKNu7apTZF@cluster0.fg4bi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
             "name":"fork_plan_db",

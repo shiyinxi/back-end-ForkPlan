@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 import os
 from ForkPlan.utils import handle_api_request, handle_exception, json_response
 
-from Recipes.models import Recipes
+from Recipes.models import Recipes, Ingredient
+from Inventory.models import Inventory
+from ShoppingList.models import ShoppingList
 from Recipes.serializers import RecipesSerializer
 
 load_dotenv()
@@ -43,13 +45,20 @@ def save_recipe(request):
             data = JSONParser().parse(request)
             serializer = RecipesSerializer(data=data)
             if serializer.is_valid():
-                serializer.save()
+                recipe = serializer.save()
+                update_shopping_list(recipe)
                 return json_response(serializer.data, status=201)
             return json_response(serializer.errors, status=400)
         except Exception as e:
             return handle_exception(e)
     else:
         return json_response({"error": "Invalid HTTP method"}, status=405)
+
+def update_shopping_list(recipe):
+    for ingredient_data in recipe.ingredients:
+        ingredient, created = Ingredient.objects.get_or_create(name=ingredient_data['name'], defaults={'quantity': ingredient_data['quantity']})
+        if not Inventory.objects.filter(ingredient=ingredient).exists() and not ShoppingList.objects.filter(ingredient=ingredient).exists():
+            ShoppingList.objects.create(ingredient=ingredient, quantity=ingredient_data['quantity'])
 
 @csrf_exempt
 def delete_recipe(request, recipe_id):
