@@ -6,6 +6,7 @@ from django.http import JsonResponse
 import requests
 from dotenv import load_dotenv
 import os
+from ForkPlan.utils import handle_api_request, handle_exception, json_response
 
 from Recipes.models import Recipes
 from Recipes.serializers import RecipesSerializer
@@ -14,27 +15,15 @@ load_dotenv()
 # Create your views here.
 @csrf_exempt
 def search_recipes(request):
-
     url = "https://api.spoonacular.com/recipes/complexSearch"
-    
     params = {
         "query": "pasta",
         "apiKey": os.getenv("SPOONACULAR_API_KEY"),
     }
-    
-    try:
-        response = requests.get(url, params=params)
-        if response.status_code == 200:
-            receipes = response.json()
-            return JsonResponse(receipes, safe=False)
-        else:
-            error_message = f"Error: Received status code {response.status_code}"
-            print(error_message)
-            return JsonResponse({"error": error_message}, status=response.status_code)
-    except requests.exceptions.RequestException as e:
-        error_message = f"Error: {str(e)}"
-        print(error_message)
-        return JsonResponse({"error": error_message}, status=500)
+    data, error = handle_api_request(url, params)
+    if error:
+        return json_response({"error": error}, status=500)
+    return json_response(data)
     
 @csrf_exempt
 def get_recipe_by_id(request, recipe_id):
@@ -42,19 +31,10 @@ def get_recipe_by_id(request, recipe_id):
     params = {
         "apiKey": os.getenv("SPOONACULAR_API_KEY"),
     }
-    try:
-        response = requests.get(url, params=params)
-        if response.status_code == 200:
-            recipe = response.json()
-            return JsonResponse(recipe, safe=False)
-        else:
-            error_message = f"Error: Received status code {response.status_code}"
-            print(error_message)
-            return JsonResponse({"error": error_message}, status=response.status_code)
-    except requests.exceptions.RequestException as e:
-        error_message = f"Error: {str(e)}"
-        print(error_message)
-        return JsonResponse({"error": error_message}, status=500)
+    data, error = handle_api_request(url, params)
+    if error:
+        return json_response({"error": error}, status=500)
+    return json_response(data)
     
 @csrf_exempt
 def save_recipe(request):
@@ -64,14 +44,12 @@ def save_recipe(request):
             serializer = RecipesSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
-                return JsonResponse(serializer.data, status=201)
-            return JsonResponse(serializer.errors, status=400)
+                return json_response(serializer.data, status=201)
+            return json_response(serializer.errors, status=400)
         except Exception as e:
-            error_message = f"Error: {str(e)}"
-            print(error_message)
-            return JsonResponse({"error": error_message}, status=500)
+            return handle_exception(e)
     else:
-        return JsonResponse({"error": "Invalid HTTP method"}, status=405)
+        return json_response({"error": "Invalid HTTP method"}, status=405)
 
 @csrf_exempt
 def delete_recipe(request, recipe_id):
@@ -79,15 +57,13 @@ def delete_recipe(request, recipe_id):
         try:
             recipe = Recipes.objects.get(id=recipe_id)
             recipe.delete()
-            return JsonResponse({"message": "Recipe deleted successfully"}, status=200)
+            return json_response({"message": "Recipe deleted successfully"})
         except Recipes.DoesNotExist:
-            return JsonResponse({"error": "Recipe not found"}, status=404)
+            return json_response({"error": "Recipe not found"}, status=404)
         except Exception as e:
-            error_message = f"Error: {str(e)}"
-            print(error_message)
-            return JsonResponse({"error": error_message}, status=500)
+            return handle_exception(e)
     else:
-        return JsonResponse({"error": "Invalid HTTP method"}, status=405)
+        return json_response({"error": "Invalid HTTP method"}, status=405)
     
 @csrf_exempt
 def get_all_recipes(request):
@@ -95,10 +71,8 @@ def get_all_recipes(request):
         try:
             recipes = Recipes.objects.all()
             serializer = RecipesSerializer(recipes, many=True)
-            return JsonResponse(serializer.data, safe=False, status=200)
+            return json_response(serializer.data)
         except Exception as e:
-            error_message = f"Error: {str(e)}"
-            print(error_message)
-            return JsonResponse({"error": error_message}, status=500)
+            return handle_exception(e)
     else:
-        return JsonResponse({"error": "Invalid HTTP method"}, status=405)
+        return json_response({"error": "Invalid HTTP method"}, status=405)
