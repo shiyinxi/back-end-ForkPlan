@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'Recipes.apps.RecipesConfig'
+    'Recipes.apps.RecipesConfig',
+    'Ingredients.apps.IngredientsConfig',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
