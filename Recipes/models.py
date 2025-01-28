@@ -16,7 +16,10 @@ class Recipes(models.Model):
     title = models.CharField(max_length=500)
     image = models.CharField(max_length=500)
     instructions = models.TextField(default="")
-    ingredients = models.ArrayField(model_container=Ingredient)
+    ingredients = models.ArrayField(
+        model_container=Ingredient,
+        default=list,
+)
 
     def __str__(self):
         return self.title

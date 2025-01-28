@@ -13,3 +13,26 @@ class RecipesSerializer(serializers.ModelSerializer):
         fields='__all__'
 
 
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('ingredients')
+        recipe = Recipes.objects.create(**validated_data)
+        for ingredient_data in ingredients_data:
+            ingredient = Ingredient.objects.create(**ingredient_data)
+            recipe.ingredients.append(ingredient)
+        recipe.save()
+        return recipe
+
+    def update(self, instance, validated_data):
+        ingredients_data = validated_data.pop('ingredients')
+        instance.title = validated_data.get('title', instance.title)
+        instance.image = validated_data.get('image', instance.image)
+        instance.instructions = validated_data.get('instructions', instance.instructions)
+        instance.save()
+
+        instance.ingredients.clear()
+        for ingredient_data in ingredients_data:
+            ingredient = Ingredient.objects.create(**ingredient_data)
+            instance.ingredients.append(ingredient)
+        instance.save()
+
+        return instance
