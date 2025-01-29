@@ -7,7 +7,7 @@ class Inventory(models.Model):
     ingredient = models.EmbeddedField(
         model_container=Ingredient
     )
-    quantity = models.CharField(max_length=100)
+    quantity = models.IntegerField()
 
     def __str__(self):
         return self.ingredient.name
