@@ -42,21 +42,43 @@ def get_recipe_by_id(request, recipe_id):
 def save_recipe(request):
     if request.method == "POST":
         try:
-            data = JSONParser().parse(request)
-            serializer = RecipesSerializer(data=data)
-            if serializer.is_valid():
-                recipe = serializer.save()
-                update_shopping_list(recipe)
-                return json_response(serializer.data, status=201)
-            return json_response(serializer.errors, status=400)
+            recipe_data = JSONParser().parse(request)
+            recipe, created = Recipes.objects.update_or_create(
+                recipe_id=recipe_data['id'],
+                defaults={
+                    'title': recipe_data['title'],
+                    'image': recipe_data['image'],
+                    'instructions': recipe_data['instructions'],
+                    'ingredients': []
+                }
+            )
+
+            # Extract and save the ingredients data
+            ingredients_data = recipe_data['extendedIngredients']
+         
+            for ingredient_data in ingredients_data:
+                recipe.ingredients.append(
+                    {'name': ingredient_data['name'],
+                    'ingredient_id': ingredient_data['id'],
+                    'image': ingredient_data.get('image', ""),
+                    'amount': ingredient_data['amount'],
+                    'unit': ingredient_data['unit']
+                    }
+                )
+            recipe.save()
+
+            return json_response({"message": "Recipe saved successfully"}, status=201)
         except Exception as e:
             return handle_exception(e)
     else:
-        return json_response({"error": "Invalid HTTP method"}, status=405)
+        return json_response({"error": "Invalid HTTP method"}, status=405)   
 
 def update_shopping_list(recipe):
     for ingredient_data in recipe.ingredients:
-        ingredient, created = Ingredient.objects.get_or_create(name=ingredient_data['name'], defaults={'quantity': ingredient_data['quantity']})
+        ingredient, created = Ingredient.objects.get_or_create(
+            ingredient_id=ingredient_data['ingredient_id'],
+            defaults={'name': ingredient_data.name, 'image': ingredient_data.image}
+        )
         if not Inventory.objects.filter(ingredient=ingredient).exists() and not ShoppingList.objects.filter(ingredient=ingredient).exists():
             ShoppingList.objects.create(ingredient=ingredient, quantity=ingredient_data['quantity'])
 
@@ -64,7 +86,7 @@ def update_shopping_list(recipe):
 def delete_recipe(request, recipe_id):
     if request.method == "DELETE":
         try:
-            recipe = Recipes.objects.get(id=recipe_id)
+            recipe = Recipes.objects.get(recipe_id=recipe_id)
             recipe.delete()
             return json_response({"message": "Recipe deleted successfully"})
         except Recipes.DoesNotExist:

@@ -4,15 +4,19 @@ from djongo import models
 
 
 class Ingredient(models.Model):
-    id = models.IntegerField(primary_key=True)
+   
+    ingredient_id = models.IntegerField(primary_key=True, unique=True)
     name = models.CharField(max_length=500)
     image = models.CharField(max_length=500)
+    unit = models.CharField(max_length=100, null=True, blank=True)
+    amount = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.name
 
 class Recipes(models.Model):
-    id = models.IntegerField(primary_key=True)
+
+    recipe_id = models.IntegerField(primary_key=True, unique=True)
     title = models.CharField(max_length=500)
     image = models.CharField(max_length=500)
     instructions = models.TextField(default="")
