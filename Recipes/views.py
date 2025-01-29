@@ -66,21 +66,34 @@ def save_recipe(request):
                     }
                 )
             recipe.save()
-
             return json_response({"message": "Recipe saved successfully"}, status=201)
         except Exception as e:
             return handle_exception(e)
     else:
         return json_response({"error": "Invalid HTTP method"}, status=405)   
 
-def update_shopping_list(recipe):
-    for ingredient_data in recipe.ingredients:
-        ingredient, created = Ingredient.objects.get_or_create(
-            ingredient_id=ingredient_data['ingredient_id'],
-            defaults={'name': ingredient_data.name, 'image': ingredient_data.image}
-        )
-        if not Inventory.objects.filter(ingredient=ingredient).exists() and not ShoppingList.objects.filter(ingredient=ingredient).exists():
-            ShoppingList.objects.create(ingredient=ingredient, quantity=ingredient_data['quantity'])
+@csrf_exempt
+def update_shopping_list(request, recipe_id):
+    if request.method == "POST":
+        try:
+            recipe = Recipes.objects.get(recipe_id=recipe_id)
+            for ingredient_data in recipe.ingredients:
+                shopping_list_item, created = ShoppingList.objects.get_or_create(
+                    ingredient=ingredient_data,
+                    defaults={'quantity': ingredient_data['amount']}
+                )
+                if not created:
+                    # If the ingredient is already in the shopping list, increase the quantity
+                    shopping_list_item.quantity += ingredient_data.amount
+                    shopping_list_item.save()
+            
+            return json_response({"message": "Shopping list updated successfully"}, status=200)
+        except Recipes.DoesNotExist:
+            return json_response({"error": "Recipe not found"}, status=404)
+        except Exception as e:
+            return handle_exception(e)
+    else:
+        return json_response({"error": "Invalid HTTP method"}, status=405)
 
 @csrf_exempt
 def delete_recipe(request, recipe_id):
