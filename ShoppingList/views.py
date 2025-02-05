@@ -23,7 +23,7 @@ def get_shopping_list(request):
     
 @csrf_exempt
 def add_item_to_inventory(request, item_id):
-    if request.method == "POST":
+    if request.method == "PUT":
         try:
             shopping_list_item = ShoppingList.objects.get(id=item_id)
             ingredient = shopping_list_item.ingredient
