@@ -12,6 +12,7 @@ from Recipes.models import Recipes, Ingredient
 from Inventory.models import Inventory
 from ShoppingList.models import ShoppingList
 from Recipes.serializers import RecipesSerializer
+import json
 
 load_dotenv()
 # Create your views here.
@@ -37,6 +38,19 @@ def get_recipe_by_id(request, recipe_id):
     if error:
         return json_response({"error": error}, status=500)
     return json_response(data)
+
+@csrf_exempt
+def search_ingredient_by_name(ingredient_name):
+    url = f"https://api.spoonacular.com/food/ingredients/search"
+    params = {
+        "apiKey": os.getenv("SPOONACULAR_API_KEY"),
+        "query": ingredient_name,
+    }
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        return None, response.json().get('message', 'Error fetching ingredient')
+    return response.json(), None
+
     
 @csrf_exempt
 def save_recipe(request):
@@ -76,17 +90,49 @@ def save_recipe(request):
 def update_shopping_list(request, recipe_id):
     if request.method == "POST":
         try:
-            recipe = Recipes.objects.get(recipe_id=recipe_id)
-            for ingredient_data in recipe.ingredients:
-                shopping_list_item, created = ShoppingList.objects.get_or_create(
-                    ingredient=ingredient_data,
-                    defaults={'quantity': ingredient_data['amount']}
-                )
-                if not created:
+            data = json.loads(request.body)
+          
+            ingredients = data.get('ingredients', [])
+            print(ingredients)
+            for ingredient_data in ingredients:
+                name = ingredient_data.get('ingredient')
+                print(name)
+                ingredient_data, error = search_ingredient_by_name(name)
+                if error:
+                    return json_response({"error": error}, status=500)
+                print('ingredient_data:', json.dumps(ingredient_data, indent=2))
+                if 'results' not in ingredient_data or not ingredient_data['results']:
+                    return json_response({"error": "No results found for ingredient"}, status=404)
+                ingredient = ingredient_data['results'][0]
+                
+                print('ingredient:',ingredient)
+                ingredient_dict = {
+                    'ingredient_id': ingredient['id'],
+                    'name': name,
+                    'image': f"https://img.spoonacular.com/ingredients_100x100/{ingredient['image']}",
+                    'amount': 1,
+                    'unit': ingredient.get('unit', ''),
+                }
+               
+                ingredient_obj = Ingredient(**ingredient_dict)
+                print("ingredient_obj:", ingredient_obj, type(ingredient_obj))
+
+                for item in ShoppingList.objects.all():
+                    if item.ingredient['ingredient_id'] == ingredient_dict['ingredient_id']:
+                        shopping_list_item = item
+                        break
+
+                if shopping_list_item is None:
+          
+                    shopping_list_item = ShoppingList.objects.create(
+                        ingredient=ingredient_dict,
+                        quantity=ingredient_dict['amount']
+                    )
+                else:
                     # If the ingredient is already in the shopping list, increase the quantity
-                    shopping_list_item.quantity += ingredient_data.amount
+                    shopping_list_item.quantity += ingredient_dict['amount']
                     shopping_list_item.save()
-            
+               
             return json_response({"message": "Shopping list updated successfully"}, status=200)
         except Recipes.DoesNotExist:
             return json_response({"error": "Recipe not found"}, status=404)

@@ -11,8 +11,17 @@ class Ingredient(models.Model):
     unit = models.CharField(max_length=100, null=True, blank=True)
     amount = models.FloatField(null=True, blank=True)
 
-    def __str__(self):
-        return self.name
+    # def __str__(self):
+    #     return self.name
+    
+    def to_dict(self):
+        return {
+            "ingredient_id": self.ingredient_id,
+            "name": self.name,
+            "image": self.image,
+            "unit": self.unit,
+            "amount": self.amount
+        }
 
 class Recipes(models.Model):
 

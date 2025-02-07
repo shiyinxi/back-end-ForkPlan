@@ -7,6 +7,6 @@ urlpatterns=[
     path('save/', views.save_recipe, name='save_recipe'),
     path('delete/<int:recipe_id>/', views.delete_recipe, name='delete_recipe'),
     path('all/', views.get_all_recipes, name='all_recipes'),
-    path('shoppinglist/<int:item_id>', views.update_shopping_list, name='update_shopping_list')
-
+    path('shoppinglist/<int:recipe_id>', views.update_shopping_list, name='update_shopping_list'),
+    path('search/<str:ingredient_name>/', views.search_ingredient_by_name, name='search_ingredient_by_name'),
 ]
