@@ -7,6 +7,3 @@ class ShoppingList(models.Model):
         model_container=Ingredient
     )
     quantity = models.IntegerField()
-
-    def __str__(self):
-        return self.ingredient.name

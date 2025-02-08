@@ -102,36 +102,46 @@ def update_shopping_list(request, recipe_id):
                     return json_response({"error": error}, status=500)
                 print('ingredient_data:', json.dumps(ingredient_data, indent=2))
                 if 'results' not in ingredient_data or not ingredient_data['results']:
-                    return json_response({"error": "No results found for ingredient"}, status=404)
+                    # return json_response({"error": "No results found for ingredient"}, status=404)
+                    continue
                 ingredient = ingredient_data['results'][0]
                 
                 print('ingredient:',ingredient)
                 ingredient_dict = {
                     'ingredient_id': ingredient['id'],
                     'name': name,
-                    'image': f"https://img.spoonacular.com/ingredients_100x100/{ingredient['image']}",
+                    'image': ingredient['image'],
                     'amount': 1,
                     'unit': ingredient.get('unit', ''),
                 }
-               
+                print('ingredient_dict:', ingredient_dict)
                 ingredient_obj = Ingredient(**ingredient_dict)
                 print("ingredient_obj:", ingredient_obj, type(ingredient_obj))
 
-                for item in ShoppingList.objects.all():
-                    if item.ingredient['ingredient_id'] == ingredient_dict['ingredient_id']:
+                shopping_list_item = None 
+
+                shopping_list_items = ShoppingList.objects.all()
+              
+                for item in shopping_list_items:
+                    print('type_of_item.ingredient:', type(item.ingredient))
+                    print("item.ingredient content:", item.ingredient)
+                    if item.ingredient.get("ingredient_id") == ingredient_dict["ingredient_id"]:
                         shopping_list_item = item
                         break
+                    print("item.ingredient.get('ingredient_id'):", item.ingredient.get("ingredient_id"))
 
                 if shopping_list_item is None:
-          
                     shopping_list_item = ShoppingList.objects.create(
                         ingredient=ingredient_dict,
-                        quantity=ingredient_dict['amount']
+                        quantity=1
                     )
                 else:
                     # If the ingredient is already in the shopping list, increase the quantity
-                    shopping_list_item.quantity += ingredient_dict['amount']
-                    shopping_list_item.save()
+                    shopping_list_item.quantity += 1
+                    shopping_list_item.ingredient = ingredient_dict
+                shopping_list_item.save()
+                print('type of shopping_list_item:', type(shopping_list_item))
+                print('shopping_list_item:', shopping_list_item)
                
             return json_response({"message": "Shopping list updated successfully"}, status=200)
         except Recipes.DoesNotExist:
