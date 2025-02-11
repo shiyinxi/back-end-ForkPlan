@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -88,8 +91,8 @@ DATABASES = {
         'ENGINE': 'djongo',
         'ENFORCE_SCHEMA': False,
         'CLIENT': {
-            "host":"mongodb+srv://shiyinxi:z5uGfxFKNu7apTZF@cluster0.fg4bi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-            "name":"fork_plan_db",
+            "host":os.getenv('MONGO_URI'),
+            "name":os.getenv('MONGODB_NAME', 'fork_plan_db'),
             "authMechanism":"SCRAM-SHA-1",
 
         },
